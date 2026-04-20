@@ -202,7 +202,7 @@ All code is TypeScript. The design document's interfaces, algorithms, and shader
     - Export as default for `dynamic()` import
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 18.2_
 
-  - [-] 7.9 Implement `ContactSection` component in `components/sections/ContactSection.tsx`
+  - [x] 7.9 Implement `ContactSection` component in `components/sections/ContactSection.tsx`
     - Display heading "Get in Touch" and contact info (email, phone, address)
     - Render `ContactForm` with 4 fields: Name (required), Email (required + validation), Company (optional), Message (required)
     - Associate all inputs with `<label htmlFor>` attributes
