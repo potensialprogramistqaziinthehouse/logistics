@@ -80,6 +80,7 @@ export function ServiceIconCanvas({ iconType, className }: ServiceIconCanvasProp
           camera={{ position: [0, 0, 3] }}
           style={{ width: '100%', height: '100%' }}
           gl={{ antialias: true, alpha: true }}
+          aria-label="Decorative 3D animation"
         >
           {/* Ambient + directional lighting for the icon */}
           <ambientLight intensity={0.6} />

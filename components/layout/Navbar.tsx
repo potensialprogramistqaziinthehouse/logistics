@@ -54,7 +54,7 @@ export function Navbar() {
               e.preventDefault()
               window.scrollTo({ top: 0, behavior: 'smooth' })
             }}
-            className="text-white font-bold text-xl tracking-tight hover:text-[#ff6b35] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#ff6b35] focus:ring-offset-2 focus:ring-offset-transparent rounded"
+            className="text-white font-bold text-xl tracking-tight hover:text-[#ff6b35] transition-colors duration-200 rounded focus:outline-none focus-visible:[outline:2px_solid_#ff6b35] focus-visible:[outline-offset:2px]"
             aria-label="Hummet Logistics — scroll to top"
           >
             Hummet Logistics
@@ -67,12 +67,7 @@ export function Navbar() {
                 <a
                   href={href}
                   onClick={(e) => handleLinkClick(e, href)}
-                  className="text-white/90 hover:text-[#ff6b35] transition-colors duration-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#ff6b35] focus:ring-offset-2 focus:ring-offset-transparent rounded px-1 py-0.5"
-                  style={{ outline: 'none' }}
-                  onFocus={(e) =>
-                    (e.currentTarget.style.outline = '2px solid #ff6b35')
-                  }
-                  onBlur={(e) => (e.currentTarget.style.outline = 'none')}
+                  className="text-white/90 hover:text-[#ff6b35] transition-colors duration-200 text-sm font-medium rounded px-1 py-0.5 focus:outline-none focus-visible:[outline:2px_solid_#ff6b35] focus-visible:[outline-offset:2px]"
                 >
                   {label}
                 </a>
@@ -83,7 +78,7 @@ export function Navbar() {
           {/* Hamburger button — mobile only */}
           <button
             type="button"
-            className="md:hidden flex flex-col justify-center items-center w-10 h-10 gap-1.5 rounded focus:outline-none focus:ring-2 focus:ring-[#ff6b35] focus:ring-offset-2 focus:ring-offset-transparent"
+            className="md:hidden flex flex-col justify-center items-center w-10 h-10 gap-1.5 rounded focus:outline-none focus-visible:[outline:2px_solid_#ff6b35] focus-visible:[outline-offset:2px]"
             aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={isMenuOpen}
             aria-controls="mobile-menu"
@@ -123,12 +118,7 @@ export function Navbar() {
                 href={href}
                 onClick={(e) => handleLinkClick(e, href)}
                 tabIndex={isMenuOpen ? 0 : -1}
-                className="block text-white/90 hover:text-[#ff6b35] transition-colors duration-200 text-base font-medium py-2 px-2 rounded focus:outline-none"
-                style={{ outline: 'none' }}
-                onFocus={(e) =>
-                  (e.currentTarget.style.outline = '2px solid #ff6b35')
-                }
-                onBlur={(e) => (e.currentTarget.style.outline = 'none')}
+                className="block text-white/90 hover:text-[#ff6b35] transition-colors duration-200 text-base font-medium py-2 px-2 rounded focus:outline-none focus-visible:[outline:2px_solid_#ff6b35] focus-visible:[outline-offset:2px]"
               >
                 {label}
               </a>

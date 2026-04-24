@@ -115,7 +115,7 @@ export function HeroSection({
           {/* Primary CTA */}
           <a
             href={ctaPrimary.href}
-            className="inline-flex items-center justify-center px-8 py-3 rounded-lg font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#ff6b35] focus:ring-offset-2 focus:ring-offset-transparent"
+            className="inline-flex items-center justify-center px-8 py-3 rounded-lg font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:[outline:2px_solid_#ff6b35] focus-visible:[outline-offset:2px]"
             style={{ backgroundColor: '#ff6b35' }}
           >
             {ctaPrimary.label}
@@ -124,7 +124,7 @@ export function HeroSection({
           {/* Secondary CTA */}
           <a
             href={ctaSecondary.href}
-            className="inline-flex items-center justify-center px-8 py-3 rounded-lg font-semibold text-white border-2 border-white bg-transparent transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-transparent"
+            className="inline-flex items-center justify-center px-8 py-3 rounded-lg font-semibold text-white border-2 border-white bg-transparent transition-colors hover:bg-white/10 focus:outline-none focus-visible:[outline:2px_solid_#ff6b35] focus-visible:[outline-offset:2px]"
           >
             {ctaSecondary.label}
           </a>

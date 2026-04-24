@@ -147,7 +147,7 @@ All code is TypeScript. The design document's interfaces, algorithms, and shader
     - Add `aria-label="Decorative 3D animation"` for accessibility
     - _Requirements: 15.2, 15.3, 16.1, 16.2, 16.3, 18.1, 18.3, 19.1_
 
-- [ ] 7. Implement UI section components
+- [x] 7. Implement UI section components
   - [x] 7.1 Implement `Navbar` component in `components/layout/Navbar.tsx`
     - Fixed position at top of viewport; display "Hummet Logistics" on the left
     - Render navigation links: Services, About, Stats, Testimonials, Contact
@@ -214,12 +214,12 @@ All code is TypeScript. The design document's interfaces, algorithms, and shader
     - **Property 7: No double-submit** — for all `ContactFormData` submissions, the submit button is disabled during the pending state, preventing concurrent submissions
     - **Validates: Design correctness property: "for all ContactFormData submissions, the form is disabled during pending state"**
 
-  - [~] 7.11 Implement `Footer` component in `components/layout/Footer.tsx`
+  - [x] 7.11 Implement `Footer` component in `components/layout/Footer.tsx`
     - Display copyright, Privacy Policy / Terms of Service / Careers links, and LinkedIn/Twitter/Facebook social icons
     - Use semantic `<footer>` element
     - _Requirements: 12.1, 12.2, 12.3, 19.4_
 
-- [~] 8. Implement the API route for contact form
+- [x] 8. Implement the API route for contact form
   - Create `app/api/contact/route.ts` as a Next.js Route Handler
   - Validate `name` (non-empty, 1–100 chars), `email` (valid email regex), `message` (non-empty, 10–2000 chars) per Requirement 23
   - Sanitize all inputs: strip HTML tags and script content
@@ -236,7 +236,7 @@ All code is TypeScript. The design document's interfaces, algorithms, and shader
     - Test: HTML injection in name is sanitized
     - _Requirements: 23.1, 23.2, 23.3, 23.4, 23.6_
 
-- [~] 9. Implement Config Parser and Serializer
+- [x] 9. Implement Config Parser and Serializer
   - Create `lib/config/parser.ts` with `parseConfig(json: string): SiteConfig | ConfigError` and `serializeConfig(config: SiteConfig): string`
   - `parseConfig` returns a descriptive error with line/column info on invalid JSON or schema violations
   - `serializeConfig` formats output with 2-space indentation
@@ -246,7 +246,7 @@ All code is TypeScript. The design document's interfaces, algorithms, and shader
     - **Property 8: Round-trip consistency** — for all valid `SiteConfig` objects, `parseConfig(serializeConfig(config))` produces an equivalent object
     - **Validates: Requirement 25.4**
 
-- [~] 10. Wire everything together in the root page
+- [x] 10. Wire everything together in the root page
   - Update `app/layout.tsx` to load Bricolage Grotesque via `next/font/google` (weights 400, 600, 700; `display: 'swap'`), apply it as a CSS variable, and preload the font
   - Update `app/globals.css` to apply the dark background (`#0a0a0f`), font variable, and `will-change: transform` utility class
   - Update `app/page.tsx` to compose all sections per the design document's example usage:
@@ -257,23 +257,23 @@ All code is TypeScript. The design document's interfaces, algorithms, and shader
   - Wire `useScrollProgress` and `useMouseParallax` in `HeroSection` and pass values to `HeroCanvas`
   - _Requirements: 1.3, 1.4, 1.5, 18.2, 19.4, 20.1, 20.2, 20.3, 20.4_
 
-- [~] 11. Checkpoint — Full integration verification
+- [x] 11. Checkpoint — Full integration verification
   - Run `npm run build` to confirm no TypeScript or build errors
   - Run `vitest --run` to confirm all property tests and unit tests pass
   - Verify the page compiles and all dynamic imports resolve without SSR errors
   - Ask the user if any questions arise before final review.
 
-- [ ] 12. Accessibility and performance audit
-  - [~] 12.1 Audit all interactive elements for keyboard navigation and visible focus indicators (2px solid outline)
+- [x] 12. Accessibility and performance audit
+  - [x] 12.1 Audit all interactive elements for keyboard navigation and visible focus indicators (2px solid outline)
     - Check: Navbar links, CTA buttons, hamburger menu, form inputs, submit button, footer links
     - _Requirements: 19.2, 19.3_
 
-  - [~] 12.2 Verify semantic HTML structure
+  - [x] 12.2 Verify semantic HTML structure
     - Confirm `<nav>`, `<main>`, `<section>`, `<footer>`, `<form>` elements are used correctly
     - Confirm all 3D canvases have `aria-label="Decorative 3D animation"`
     - _Requirements: 19.1, 19.4_
 
-  - [~] 12.3 Verify font loading configuration
+  - [x] 12.3 Verify font loading configuration
     - Confirm `font-display: swap` is applied via `next/font/google` options
     - Confirm font is preloaded in the document `<head>`
     - _Requirements: 20.3, 20.4_
@@ -282,7 +282,7 @@ All code is TypeScript. The design document's interfaces, algorithms, and shader
     - **Property 9: Hero section always 100vh** — for all viewport sizes, the hero section's rendered height equals `window.innerHeight`
     - **Validates: Design correctness property: "for all viewport sizes, the hero section occupies exactly 100vh height"**
 
-- [~] 13. Final checkpoint — Ensure all tests pass
+- [x] 13. Final checkpoint — Ensure all tests pass
   - Run `vitest --run` to confirm all tests pass
   - Run `npm run lint` to confirm no lint errors
   - Ensure all tests pass, ask the user if questions arise.

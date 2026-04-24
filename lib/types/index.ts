@@ -111,5 +111,5 @@ export interface ContactSectionProps {
   email: string
   phone: string
   address: string
-  onSubmit: (data: ContactFormData) => Promise<void>
+  onSubmit?: (data: ContactFormData) => Promise<void>
 }

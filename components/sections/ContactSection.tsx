@@ -38,7 +38,7 @@ function validateForm(data: ContactFormData): FormErrors {
 // ─── ContactForm sub-component ────────────────────────────────────────────────
 
 interface ContactFormProps {
-  onSubmit: (data: ContactFormData) => Promise<void>
+  onSubmit?: (data: ContactFormData) => Promise<void>
 }
 
 function ContactForm({ onSubmit }: ContactFormProps) {
@@ -87,7 +87,9 @@ function ContactForm({ onSubmit }: ContactFormProps) {
         throw new Error('Submission failed')
       }
 
-      await onSubmit(formData)
+      if (onSubmit) {
+        await onSubmit(formData)
+      }
       setSubmitStatus('success')
       setFormData({ name: '', email: '', company: '', message: '' })
     } catch {

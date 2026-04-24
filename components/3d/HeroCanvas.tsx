@@ -67,7 +67,7 @@ export function HeroCanvas({ scrollProgress, mousePosition }: HeroCanvasProps) {
     <div style={{ position: 'absolute', inset: 0 }}>
       <Suspense fallback={<CanvasSkeleton />}>
         <Canvas
-          camera={{ position: [0, 0, 5], fov: 60 }}
+          camera={{ position: [0, 0, 7], fov: 65 }}
           dpr={Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2)}
           shadows
           style={{ position: 'absolute', inset: 0 }}
@@ -79,13 +79,16 @@ export function HeroCanvas({ scrollProgress, mousePosition }: HeroCanvasProps) {
           }}
         >
           <SceneLighting />
+          {/* Globe on the left */}
           <GlobeModel
             scrollProgress={scrollProgress}
             mouseX={mousePosition.x}
             mouseY={mousePosition.y}
+            positionX={-2.5}
           />
+          {/* Car on the right */}
           <Suspense fallback={null}>
-            <TruckModel scrollProgress={scrollProgress} modelPath="/models/truck.glb" />
+            <TruckModel scrollProgress={scrollProgress} modelPath="/models/car.glb" />
           </Suspense>
           <ParticleField scrollProgress={scrollProgress} />
         </Canvas>

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 
 /**
@@ -31,7 +31,9 @@ function useAnimationPerformance(onReduceParticles: () => void): void {
   const consecutiveLowFpsFrames = useRef(0)
   // Keep a stable ref to the callback to avoid stale closures
   const onReduceParticlesRef = useRef(onReduceParticles)
-  onReduceParticlesRef.current = onReduceParticles
+  useEffect(() => {
+    onReduceParticlesRef.current = onReduceParticles
+  })
 
   useFrame((_state, delta) => {
     // delta is in seconds; FPS = 1 / delta

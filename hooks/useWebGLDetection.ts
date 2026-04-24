@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useLayoutEffect } from 'react'
 
 /**
  * Hook that detects WebGL2 availability on the client side.
@@ -22,14 +22,17 @@ import { useState, useEffect } from 'react'
 function useWebGLDetection(): { isAvailable: boolean } {
   const [isAvailable, setIsAvailable] = useState(false)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    let available = false
     try {
       const canvas = document.createElement('canvas')
       const context = canvas.getContext('webgl2')
-      setIsAvailable(context !== null)
+      available = context !== null
     } catch {
-      setIsAvailable(false)
+      available = false
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsAvailable(available)
   }, [])
 
   return { isAvailable }

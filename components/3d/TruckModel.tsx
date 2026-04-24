@@ -1,171 +1,258 @@
 'use client'
 
-import { useRef, useMemo } from 'react'
+import { useRef, Component, useEffect, useState } from 'react'
+import type { ReactNode, ErrorInfo } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import { useThree } from '@react-three/fiber'
 import type { MotionValue } from 'framer-motion'
 
 interface TruckModelProps {
   scrollProgress: MotionValue<number>
-  modelPath: string  // '/models/truck.glb'
+  modelPath: string
 }
 
-/**
- * Validates that a model path is safe to load:
- * - Must end with .glb or .gltf
- * - Must start with /models/ (same-origin /public/models)
- */
+// ─── Error Boundary ───────────────────────────────────────────────────────────
+
+class GLTFErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { fallback: ReactNode; children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() { return { hasError: true } }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.warn('[CarModel] GLTF load failed, using fallback:', error.message, info)
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children
+  }
+}
+
+// ─── Path validation ──────────────────────────────────────────────────────────
+
 function isValidModelPath(path: string): boolean {
   if (!path) return false
-  const hasValidExtension = path.endsWith('.glb') || path.endsWith('.gltf')
-  const isSameOrigin = path.startsWith('/models/')
-  return hasValidExtension && isSameOrigin
+  return (path.endsWith('.glb') || path.endsWith('.gltf')) && path.startsWith('/models/')
 }
 
-// ─── Bezier path for truck animation ─────────────────────────────────────────
+// ─── Material helpers ─────────────────────────────────────────────────────────
 
-const BEZIER_CURVE = new THREE.CubicBezierCurve3(
-  new THREE.Vector3(-8, -1, 0),
-  new THREE.Vector3(-3, -1, 2),
-  new THREE.Vector3(3, -1, -2),
-  new THREE.Vector3(8, -1, 0)
-)
+function buildCarMaterials() {
+  return {
+    body: new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#1a1a2e'),
+      metalness: 0.95,
+      roughness: 0.1,
+    }),
+    glass: new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#4f9eff'),
+      metalness: 0.1,
+      roughness: 0.05,
+      transparent: true,
+      opacity: 0.45,
+    }),
+    wheel: new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#111111'),
+      metalness: 0.6,
+      roughness: 0.4,
+    }),
+    rim: new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#888888'),
+      metalness: 1.0,
+      roughness: 0.15,
+    }),
+  }
+}
 
-// ─── Fallback procedural truck ────────────────────────────────────────────────
+function applyCarMaterials(root: THREE.Object3D) {
+  const mats = buildCarMaterials()
+  root.traverse(child => {
+    const mesh = child as THREE.Mesh
+    if (!mesh.isMesh) return
+    mesh.castShadow = true
+    mesh.receiveShadow = true
+    // Dispose embedded textures — this is what causes the blob URL errors
+    const disposeMat = (m: THREE.Material) => {
+      if (m instanceof THREE.MeshStandardMaterial || m instanceof THREE.MeshPhysicalMaterial) {
+        m.map?.dispose()
+        m.normalMap?.dispose()
+        m.roughnessMap?.dispose()
+        m.metalnessMap?.dispose()
+        m.aoMap?.dispose()
+        m.emissiveMap?.dispose()
+        m.map = null
+        m.normalMap = null
+        m.roughnessMap = null
+        m.metalnessMap = null
+        m.aoMap = null
+        m.emissiveMap = null
+      }
+      m.dispose()
+    }
+    if (Array.isArray(mesh.material)) mesh.material.forEach(disposeMat)
+    else if (mesh.material) disposeMat(mesh.material)
 
-function FallbackTruck({ truckProgressRef }: { truckProgressRef: React.MutableRefObject<number> }) {
-  const groupRef = useRef<THREE.Group>(null)
-
-  useFrame(() => {
-    if (!groupRef.current) return
-    const pos = BEZIER_CURVE.getPoint(truckProgressRef.current)
-    groupRef.current.position.copy(pos)
+    const name = child.name.toLowerCase()
+    if (name.includes('glass') || name.includes('window') || name.includes('windshield')) {
+      mesh.material = mats.glass
+    } else if (name.includes('wheel') || name.includes('tire') || name.includes('tyre')) {
+      mesh.material = mats.wheel
+    } else if (name.includes('rim') || name.includes('brake') || name.includes('disc')) {
+      mesh.material = mats.rim
+    } else {
+      mesh.material = mats.body
+    }
   })
+}
 
+function fitAndCentre(root: THREE.Object3D, targetSize = 3) {
+  const box = new THREE.Box3().setFromObject(root)
+  const size = new THREE.Vector3()
+  box.getSize(size)
+  const maxDim = Math.max(size.x, size.y, size.z)
+  if (maxDim > 0) root.scale.setScalar(targetSize / maxDim)
+  // Re-centre after scale
+  box.setFromObject(root)
+  const centre = new THREE.Vector3()
+  box.getCenter(centre)
+  root.position.y -= centre.y + box.min.y
+}
+
+// ─── Fallback box ─────────────────────────────────────────────────────────────
+
+function FallbackCar({ positionX }: { positionX: number }) {
+  const ref = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    ref.current.rotation.y = clock.getElapsedTime() * 0.4
+  })
   return (
-    <group ref={groupRef} castShadow>
+    <group ref={ref} position={[positionX, -0.5, 0]}>
       <mesh castShadow>
-        <boxGeometry args={[2, 1, 0.8]} />
-        <meshStandardMaterial color="#333333" />
+        <boxGeometry args={[2.4, 0.5, 1.1]} />
+        <meshStandardMaterial color="#1a1a2e" metalness={0.8} roughness={0.2} />
+      </mesh>
+      <mesh castShadow position={[0, 0.45, 0]}>
+        <boxGeometry args={[1.2, 0.4, 0.9]} />
+        <meshStandardMaterial color="#0d0d1a" metalness={0.6} roughness={0.3} />
       </mesh>
     </group>
   )
 }
 
-// ─── GLTF truck (inner component, always calls useGLTF) ───────────────────────
-
-function GLTFTruck({
-  modelPath,
-  truckProgressRef,
-  wheelProgressRef,
-}: {
-  modelPath: string
-  truckProgressRef: React.MutableRefObject<number>
-  wheelProgressRef: React.MutableRefObject<number>
-}) {
-  const { scene } = useGLTF(modelPath)
-  const groupRef = useRef<THREE.Group>(null)
-
-  // Clone the scene so multiple instances don't share state
-  const clonedScene = useMemo(() => {
-    if (!scene) return null
-    const clone = scene.clone(true)
-    clone.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        (child as THREE.Mesh).castShadow = true
-      }
-    })
-    return clone
-  }, [scene])
-
-  // Collect wheel meshes by name convention (e.g. "wheel", "Wheel", "tire")
-  const wheelRefs = useMemo(() => {
-    const wheels: THREE.Object3D[] = []
-    if (clonedScene) {
-      clonedScene.traverse((child) => {
-        const name = child.name.toLowerCase()
-        if (name.includes('wheel') || name.includes('tire') || name.includes('tyre')) {
-          wheels.push(child)
-        }
-      })
-    }
-    return wheels
-  }, [clonedScene])
-
-  useFrame(() => {
-    if (!groupRef.current || !clonedScene) return
-
-    // Position truck along bezier path
-    const pos = BEZIER_CURVE.getPoint(truckProgressRef.current)
-    groupRef.current.position.copy(pos)
-
-    // Orient truck to face direction of travel
-    const tangent = BEZIER_CURVE.getTangent(truckProgressRef.current)
-    if (tangent.length() > 0) {
-      groupRef.current.rotation.y = Math.atan2(tangent.x, tangent.z)
-    }
-
-    // Rotate wheels based on progress (simulate rolling)
-    const wheelAngle = wheelProgressRef.current * Math.PI * 8
-    for (const wheel of wheelRefs) {
-      wheel.rotation.x = wheelAngle
-    }
-  })
-
-  if (!clonedScene) return null
-
-  return (
-    <group ref={groupRef} castShadow>
-      <primitive object={clonedScene} />
-    </group>
-  )
-}
-
-// ─── Main TruckModel component ────────────────────────────────────────────────
+// ─── GLTF car — loads via raw GLTFLoader with a silent LoadingManager ─────────
 
 /**
- * TruckModel renders an animated cargo truck along a bezier path.
- *
- * Security: only loads models from /public/models (same origin) with .glb/.gltf extension.
- * Fallback: if the model path is invalid or the GLTF fails to load, renders a procedural
- * low-poly box geometry instead.
- *
- * Note: Wrap this component in a <Suspense> boundary in the parent, since useGLTF
- * uses React Suspense for async loading.
+ * We bypass useGLTF/drei entirely and use the raw GLTFLoader with a custom
+ * LoadingManager that silently swallows blob URL errors.
+ * This is the only reliable way to suppress the
+ * "THREE.GLTFLoader: Couldn't load texture blob:..." console error,
+ * because the error fires inside the loader before any material swap can run.
  */
-export function TruckModel({ scrollProgress, modelPath }: TruckModelProps) {
-  // Shared animation state refs (updated in the outer useFrame, read by child)
-  const truckProgressRef = useRef<number>(0)
-  const wheelProgressRef = useRef<number>(0)
+function GLTFCar({
+  modelPath,
+  positionX,
+  onError,
+}: {
+  modelPath: string
+  positionX: number
+  onError: () => void
+}) {
+  const groupRef = useRef<THREE.Group>(null)
+  const sceneRef = useRef<THREE.Object3D | null>(null)
+  const { gl } = useThree()
 
-  // Advance truck progress each frame (loops 0→1 continuously)
+  useEffect(() => {
+    // LoadingManager that silently ignores blob:// texture failures
+    const manager = new THREE.LoadingManager()
+    manager.onError = (url: string) => {
+      if (url.startsWith('blob:')) {
+        // Silently ignore — embedded texture blob URLs fail in dev, harmless
+        return
+      }
+      console.warn('[CarModel] Asset failed to load:', url)
+    }
+
+    const dracoLoader = new DRACOLoader(manager)
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
+
+    const loader = new GLTFLoader(manager)
+    loader.setDRACOLoader(dracoLoader)
+
+    loader.load(
+      modelPath,
+      (gltf: GLTF) => {
+        const root = gltf.scene
+        // Strip embedded textures and apply clean PBR materials
+        applyCarMaterials(root)
+        fitAndCentre(root, 3)
+        sceneRef.current = root
+        if (groupRef.current) {
+          // Clear any previous children
+          while (groupRef.current.children.length > 0) {
+            groupRef.current.remove(groupRef.current.children[0])
+          }
+          groupRef.current.add(root)
+        }
+      },
+      undefined,
+      (err: unknown) => {
+        console.warn('[CarModel] Failed to load GLB:', err)
+        onError()
+      }
+    )
+
+    return () => {
+      dracoLoader.dispose()
+      // Dispose loaded scene on unmount
+      if (sceneRef.current) {
+        sceneRef.current.traverse(child => {
+          const mesh = child as THREE.Mesh
+          if (mesh.isMesh) {
+            mesh.geometry?.dispose()
+            if (Array.isArray(mesh.material)) mesh.material.forEach(m => m.dispose())
+            else mesh.material?.dispose()
+          }
+        })
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelPath, gl])
+
   useFrame(({ clock }) => {
-    const time = clock.getElapsedTime()
-    // Loop every ~10 seconds
-    truckProgressRef.current = (time * 0.1) % 1
-    wheelProgressRef.current = truckProgressRef.current
+    if (!groupRef.current) return
+    groupRef.current.rotation.y = clock.getElapsedTime() * 0.35
   })
 
-  const pathIsValid = isValidModelPath(modelPath)
+  return <group ref={groupRef} position={[positionX, -0.8, 0]} />
+}
 
-  if (!pathIsValid) {
-    return <FallbackTruck truckProgressRef={truckProgressRef} />
-  }
+// ─── Wrapper that handles the error → fallback transition ─────────────────────
 
+function GLTFCarWithFallback({ modelPath, positionX }: { modelPath: string; positionX: number }) {
+  const [failed, setFailed] = useState(false)
+  if (failed) return <FallbackCar positionX={positionX} />
   return (
-    <GLTFTruck
-      modelPath={modelPath}
-      truckProgressRef={truckProgressRef}
-      wheelProgressRef={wheelProgressRef}
-    />
+    <GLTFErrorBoundary fallback={<FallbackCar positionX={positionX} />}>
+      <GLTFCar modelPath={modelPath} positionX={positionX} onError={() => setFailed(true)} />
+    </GLTFErrorBoundary>
   )
 }
 
-// Preload the model when the path is known at module level
-// (called externally by the parent when a valid path is available)
+// ─── Main export ──────────────────────────────────────────────────────────────
+
+export function TruckModel({ modelPath, scrollProgress: _scrollProgress }: TruckModelProps) {
+  const positionX = 3.5
+  if (!isValidModelPath(modelPath)) return <FallbackCar positionX={positionX} />
+  return <GLTFCarWithFallback modelPath={modelPath} positionX={positionX} />
+}
+
 export function preloadTruckModel(modelPath: string): void {
-  if (isValidModelPath(modelPath)) {
-    useGLTF.preload(modelPath)
-  }
+  // No-op: we use raw GLTFLoader now, not useGLTF
 }

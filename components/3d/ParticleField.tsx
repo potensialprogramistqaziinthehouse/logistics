@@ -6,10 +6,31 @@ import * as THREE from 'three'
 import { particleVertexShader, particleFragmentShader } from '@/lib/three/shaders/particles.glsl'
 import type { ParticleFieldProps } from '@/lib/types'
 
+/** Generate particle geometry data outside of render to satisfy purity rules */
+function generateParticleData(particleCount: number, spread: number) {
+  const positions = new Float32Array(particleCount * 3)
+  const sizes = new Float32Array(particleCount)
+  const phases = new Float32Array(particleCount)
+
+  for (let i = 0; i < particleCount; i++) {
+    // Random position in a cube of size `spread`
+    positions[i * 3 + 0] = (Math.random() - 0.5) * spread
+    positions[i * 3 + 1] = (Math.random() - 0.5) * spread
+    positions[i * 3 + 2] = (Math.random() - 0.5) * spread
+
+    // Random size between 1 and 3
+    sizes[i] = 1 + Math.random() * 2
+
+    // Random phase between 0 and 2π
+    phases[i] = Math.random() * Math.PI * 2
+  }
+
+  return { positions, sizes, phases }
+}
+
 export function ParticleField({
   count = 2000,
   spread = 20,
-  color = '#4f9eff',
   scrollProgress,
 }: ParticleFieldProps) {
   const ref = useRef<THREE.Points>(null)
@@ -18,26 +39,10 @@ export function ParticleField({
   const particleCount =
     typeof window !== 'undefined' && window.innerWidth < 768 ? 500 : count
 
-  const { positions, sizes, phases } = useMemo(() => {
-    const positions = new Float32Array(particleCount * 3)
-    const sizes = new Float32Array(particleCount)
-    const phases = new Float32Array(particleCount)
-
-    for (let i = 0; i < particleCount; i++) {
-      // Random position in a cube of size `spread`
-      positions[i * 3 + 0] = (Math.random() - 0.5) * spread
-      positions[i * 3 + 1] = (Math.random() - 0.5) * spread
-      positions[i * 3 + 2] = (Math.random() - 0.5) * spread
-
-      // Random size between 1 and 3
-      sizes[i] = 1 + Math.random() * 2
-
-      // Random phase between 0 and 2π
-      phases[i] = Math.random() * Math.PI * 2
-    }
-
-    return { positions, sizes, phases }
-  }, [particleCount, spread])
+  const { positions, sizes, phases } = useMemo(
+    () => generateParticleData(particleCount, spread),
+    [particleCount, spread]
+  )
 
   const uniforms = useMemo(
     () => ({
